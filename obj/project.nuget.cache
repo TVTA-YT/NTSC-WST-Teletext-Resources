@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "9nQhaYBVYWA=",
+  "success": true,
+  "projectFilePath": "D:\\Documents\\git\\teletext-suite-core\\teletext-shared-resources\\TeletextSharedResources_Core.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\jkrob\\.nuget\\packages\\microsoft.win32.systemevents\\9.0.2\\microsoft.win32.systemevents.9.0.2.nupkg.sha512",
+    "C:\\Users\\jkrob\\.nuget\\packages\\system.drawing.common\\9.0.2\\system.drawing.common.9.0.2.nupkg.sha512"
+  ],
+  "logs": []
+}
