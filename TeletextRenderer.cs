@@ -359,7 +359,7 @@ namespace TeletextSharedResources
                     System.Diagnostics.Debug.WriteLine("BG Clut: {2}, BG Colour: {3}, BG aRGB: {4}\nFG Clut: {5}, FG Colour: {6}, FG aRGB: {7}\n", xPos, yPos, page.modeMapL2[yPos, xPos].BgndCLUT, page.modeMapL2[yPos, xPos].BgndColourCode, chr.Palette.Entries[0].ToString(), page.modeMapL2[yPos, xPos].ForeCLUT, page.modeMapL2[yPos, xPos].ForeColourCode, chr.Palette.Entries[1].ToString());
 
                 //grForeground.DrawImage(chr, (xPos * 12) + level1XStart, (yPos * 20) + level1YStart, (doubleWidth ? chr.Width * 2 : chr.Width), (doubleHeight ? chr.Height * 2 : chr.Height));
-                grForeground.DrawImage(chr, ((xPos * 12) + level1XStart) * dpiScale, ((yPos * 20) + level1YStart) * dpiScale, chr.Width, chr.Height);
+                grForeground.DrawImage(chr, ((xPos * 12) + level1XStart) * dpiScale, ((yPos * 20) + level1YStart) * dpiScale, chr.Width * dpiScale, chr.Height * dpiScale);
             }
             return layers;
         }
@@ -574,7 +574,7 @@ namespace TeletextSharedResources
                 {
                     // Clear this line before rendering
                     Brush clearBrush = new SolidBrush(layers.Transparency);
-                    grForeground.FillRectangle(clearBrush, (0 + level1XStart) * dpiScale, ((y * charHeight) + level1YStart) * dpiScale, 40 * charWidth, charHeight);
+                    grForeground.FillRectangle(clearBrush, (0 + level1XStart) * dpiScale, ((y * charHeight) + level1YStart) * dpiScale, (40 * charWidth) * dpiScale, (charHeight * dpiScale));
                     //layers.Foreground.Save(Environment.GetEnvironmentVariable("temp") + "\\teletext\\renderer4-" + y.ToString() + ".png");
                     if (page.Lines[lineNo].Text.Length > 40)
                     {
@@ -706,7 +706,7 @@ namespace TeletextSharedResources
                 // if we have had a double height code on this row, copy the background to the row below
                 if (doubleHeightSet)
                 {
-                    Bitmap thisRowBackground = layers.Background.Clone(new Rectangle(0 + level1XStart, (y * charHeight) + level1YStart, 480, charHeight), layers.Background.PixelFormat);
+                    Bitmap thisRowBackground = layers.Background.Clone(new Rectangle((int)(0 + level1XStart * dpiScale), (int)(((y * charHeight) + level1YStart) * dpiScale), (int)(480 * dpiScale), (int)(charHeight * dpiScale)), layers.Background.PixelFormat);
                     grBackground.DrawImage(thisRowBackground, (0 + level1XStart) * dpiScale, (((y + 1) * charHeight) + level1YStart) * dpiScale);
                     doubleHeightAbove = true;
                 }
