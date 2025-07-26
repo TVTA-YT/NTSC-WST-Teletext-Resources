@@ -656,15 +656,15 @@ namespace TeletextSharedResources
                         //layers.Foreground.Save(Environment.GetEnvironmentVariable("temp") + "\\teletext\\renderer6-" + y.ToString() + ".png");
                         if (layers.Mode.DoubleHeight)
                         {
-                            chr = ConvertToDoubleHeight(chr);
-                            bgndChr = ConvertToDoubleHeight(bgndChr);
+                            chr = ConvertToDoubleHeight(chr, _deviceDPI);
+                            bgndChr = ConvertToDoubleHeight(bgndChr, _deviceDPI);
                             doubleHeightSet = true;
                         }
 
                         if (layers.Mode.DoubleWidth && _presentationLevel > 1.5)
                         {
-                            chr = ConvertToDoubleWidth(chr);
-                            bgndChr = ConvertToDoubleWidth(bgndChr);
+                            chr = ConvertToDoubleWidth(chr, _deviceDPI);
+                            bgndChr = ConvertToDoubleWidth(bgndChr, _deviceDPI);
                             if (initialDoubleWidthX == -1)
                                 initialDoubleWidthX = x;
                         }
@@ -1257,70 +1257,104 @@ namespace TeletextSharedResources
         }
 
 
-        private Bitmap ConvertToDoubleHeight(Image imgIn, ColorPalette pal = null)
+        private Bitmap ConvertToDoubleHeight(Image imgIn, float DeviceDPI = 96.0f, ColorPalette pal = null)
         {
             Bitmap bmpIn = new Bitmap(imgIn);
-            Bitmap bmpOut = new Bitmap(imgIn.Width, imgIn.Height * 2, bmpIn.PixelFormat);
+            //bmpIn.Save(Environment.GetEnvironmentVariable("temp") + "\\input.png", System.Drawing.Imaging.ImageFormat.Png);
 
-            //Rectangle destRect = new Rectangle(0, 0, bmpIn.Width, bmpIn.Height*2);
+            float dpiScale = DeviceDPI / 96.0f;
 
+            // Calculate scaled dimensions  
+            int scaledWidth = (int)(imgIn.Width * dpiScale);
+            int scaledHeight = (int)(imgIn.Height * 2 * dpiScale);
+
+            Bitmap bmpOut = new Bitmap(scaledWidth, scaledHeight, bmpIn.PixelFormat);
+
+            // Scale the pixel positioning based on DPI - fill all pixels in the scaled areas
             for (int y = 0; y < bmpIn.Height; y++)
             {
                 for (int x = 0; x < bmpIn.Width; x++)
                 {
-                    bmpOut.SetPixel(x, y * 2, bmpIn.GetPixel(x, y));
-                    bmpOut.SetPixel(x, (y * 2) + 1, bmpIn.GetPixel(x, y));
+                    Color pixel = bmpIn.GetPixel(x, y);
+
+                    // Calculate scaled position ranges
+                    int scaledXStart = (int)(x * dpiScale);
+                    int scaledXEnd = (int)((x + 1) * dpiScale);
+                    int scaledY1Start = (int)(y * 2 * dpiScale);
+                    int scaledY1End = (int)((y * 2 + 1) * dpiScale);
+                    int scaledY2Start = (int)((y * 2 + 1) * dpiScale);
+                    int scaledY2End = (int)((y * 2 + 2) * dpiScale);
+
+                    // Fill all pixels in the scaled area (double height)
+                    for (int scaledX = scaledXStart; scaledX < scaledXEnd && scaledX < scaledWidth; scaledX++)
+                    {
+                        // First row of double height
+                        for (int scaledY1 = scaledY1Start; scaledY1 < scaledY1End && scaledY1 < scaledHeight; scaledY1++)
+                        {
+                            bmpOut.SetPixel(scaledX, scaledY1, pixel);
+                        }
+                        // Second row of double height
+                        for (int scaledY2 = scaledY2Start; scaledY2 < scaledY2End && scaledY2 < scaledHeight; scaledY2++)
+                        {
+                            bmpOut.SetPixel(scaledX, scaledY2, pixel);
+                        }
+                    }
                 }
             }
 
             if (pal != null)
                 bmpOut.Palette = pal;
 
-            //---------------------------------
-
-            /*Bitmap bmpOut = new Bitmap(bmpIn.Width, bmpIn.Height * 2, bmpIn.PixelFormat);
-
-            BitmapData bmpDataIn = bmpIn.LockBits(new Rectangle(0, 0, bmpIn.Width, bmpIn.Height), ImageLockMode.ReadOnly, PixelFormat.Format1bppIndexed);
-            BitmapData bmpDataOut = bmpOut.LockBits(new Rectangle(0, 0, bmpOut.Width, bmpOut.Height), ImageLockMode.ReadWrite, PixelFormat.Format1bppIndexed);
-
-            for (Int32 y = 0; y < bmpDataIn.Height; y++)
-            {
-
-                for (Int32 x = 0; x < bmpDataIn.Stride; x++)
-                {
-                    Byte b = Marshal.ReadByte(bmpDataIn.Scan0, (y * bmpDataIn.Stride) + x);
-                    //System.Diagnostics.Debug.WriteLine(Convert.ToString(b, 2) + " " + Convert.ToString((Byte)~b, 2));
-
-                    Marshal.WriteByte(bmpDataOut.Scan0, ((y * 2) * bmpDataOut.Stride) + x, (Byte)~b);
-                    Marshal.WriteByte(bmpDataOut.Scan0, (((y * 2) + 1) * bmpDataOut.Stride) + x, (Byte)~b);
-                }
-
-            }
-            bmpIn.UnlockBits(bmpDataIn);
-            bmpOut.UnlockBits(bmpDataOut);*/
+            //bmpOut.Save(Environment.GetEnvironmentVariable("temp") + $"\\input-{Guid.NewGuid()}.png", System.Drawing.Imaging.ImageFormat.Png);
 
             return bmpOut;
         }
 
-        private Bitmap ConvertToDoubleWidth(Image imgIn)
+        private Bitmap ConvertToDoubleWidth(Image imgIn, float DeviceDPI = 96.0f)
         {
             Bitmap bmpIn = new Bitmap(imgIn);
-            Bitmap bmpOut = new Bitmap(imgIn.Width * 2, imgIn.Height, bmpIn.PixelFormat);
+            float dpiScale = DeviceDPI / 96.0f;
 
-            //Rectangle destRect = new Rectangle(0, 0, bmpIn.Width, bmpIn.Height*2);
+            // Calculate scaled dimensions
+            int scaledWidth = (int)(imgIn.Width * 2 * dpiScale);
+            int scaledHeight = (int)(imgIn.Height * dpiScale);
 
+            Bitmap bmpOut = new Bitmap(scaledWidth, scaledHeight, bmpIn.PixelFormat);
+
+            // Scale the pixel positioning based on DPI - fill all pixels in the scaled areas
             for (int y = 0; y < bmpIn.Height; y++)
             {
                 for (int x = 0; x < bmpIn.Width; x++)
                 {
-                    bmpOut.SetPixel(x * 2, y, bmpIn.GetPixel(x, y));
-                    bmpOut.SetPixel((x * 2) + 1, y, bmpIn.GetPixel(x, y));
+                    Color pixel = bmpIn.GetPixel(x, y);
+
+                    // Calculate scaled position ranges
+                    int scaledX1Start = (int)(x * 2 * dpiScale);
+                    int scaledX1End = (int)((x * 2 + 1) * dpiScale);
+                    int scaledX2Start = (int)((x * 2 + 1) * dpiScale);
+                    int scaledX2End = (int)((x * 2 + 2) * dpiScale);
+                    int scaledYStart = (int)(y * dpiScale);
+                    int scaledYEnd = (int)((y + 1) * dpiScale);
+
+                    // Fill all pixels in the scaled area (double width)
+                    for (int scaledY = scaledYStart; scaledY < scaledYEnd && scaledY < scaledHeight; scaledY++)
+                    {
+                        // First column of double width
+                        for (int scaledX1 = scaledX1Start; scaledX1 < scaledX1End && scaledX1 < scaledWidth; scaledX1++)
+                        {
+                            bmpOut.SetPixel(scaledX1, scaledY, pixel);
+                        }
+                        // Second column of double width
+                        for (int scaledX2 = scaledX2Start; scaledX2 < scaledX2End && scaledX2 < scaledWidth; scaledX2++)
+                        {
+                            bmpOut.SetPixel(scaledX2, scaledY, pixel);
+                        }
+                    }
                 }
             }
 
             return bmpOut;
         }
-
         private Bitmap ConvertToUnderlined(Image imgIn)
         {
 
@@ -1711,6 +1745,7 @@ namespace TeletextSharedResources
         private void NonDisplayablePackets(Page page, RenderedLayersNova layers, String block)
         {
             // Scan binary file for X/26 packets
+           
             // ***************************************
 
             //Initialise and load header info
@@ -1968,9 +2003,6 @@ namespace TeletextSharedResources
 
 
 
-
-
-
         }
 
         private void DecodeX26(Line workingLine, Page page, RenderedLayersNova layers)
@@ -2014,6 +2046,7 @@ namespace TeletextSharedResources
 
 
 
+
                 HammingResults2418 hr = new HammingResults2418();
                 HammingResults2418 hr2 = new HammingResults2418();
 
@@ -2053,6 +2086,7 @@ namespace TeletextSharedResources
                                                 Byte CLUT = Convert.ToByte(hr.Data.Substring(2, 2), 2);
                                                 Byte clutEntry = Convert.ToByte(hr.Data.Substring(4, 3), 2);
                                                 Color col = ColourLookup(CLUT, clutEntry, "BG");
+
 
 // Set the image attribute's color mappings
                                                 ColorMap[] colorMap = new ColorMap[1];
@@ -2676,7 +2710,7 @@ namespace TeletextSharedResources
                                                                 page.modeMapL2[activeY, x].SeparatedGraphics = true;
                                                             }
 
-                                                            RenderL2Character(ref page, ref layers, ref initialDoubleWidthX, activeX, activeY);
+                                                            RenderL2Character(ref page, ref layers, ref initialDoubleWidthX, x, activeY);
 
                                                             System.Diagnostics.Debug.Write("(" + x + ", " + activeY + ") ");
 
@@ -2737,7 +2771,7 @@ namespace TeletextSharedResources
 
                                                     //System.Diagnostics.Debug.Write("Character @ active pos: " + page.modeMapL2[activeX, activeY].Character.toHex(2));
                                                     for (Int32 x = activeX;
-                                                        x < 39 && page.modeMapL2[activeY, x + 1].Character != 0x0c && page.modeMapL2[activeY, x + 1].Character != 0x0f;
+                                                        x < 39 && page.modeMapL2[activeY, x + 1].Character != 0x0c && page.modeMapL2[activeY, x + 1].Character != 0x0d;
                                                         x++)
 
                                                     {
@@ -2779,7 +2813,7 @@ namespace TeletextSharedResources
 
                                                     //System.Diagnostics.Debug.Write("Character @ active pos: " + page.modeMapL2[activeX, activeY].Character.toHex(2));
                                                     for (Int32 x = activeX;
-                                                        x < 40 && page.modeMapL2[activeY, (x < 39 ? x + 1 : x)].Character != 0x0c && page.modeMapL2[activeY, (x < 39 ? x + 1 : x)].Character != 0x0d;
+                                                        x < 40 && page.modeMapL2[activeY, x + 1].Character != 0x0c && page.modeMapL2[activeY, x + 1].Character != 0x0d;
                                                         x++)
                                                     {
                                                         System.Diagnostics.Debug.Write(Convert.ToChar(page.modeMapL2[activeY, x].Character) + " ");
@@ -3008,12 +3042,12 @@ namespace TeletextSharedResources
                         //ColorPalette pal = GetColour(page, x, y, chr.Palette);
                         //chr.Palette = pal;
 
-                        chr = ConvertToDoubleWidth(chr);
+                        chr = ConvertToDoubleWidth(chr, _deviceDPI);
                         chr.Palette = pal;
 
                         if (page.modeMapL2[y, x].DoubleHeight)
                         {
-                            chr = ConvertToDoubleHeight(chr);
+                            chr = ConvertToDoubleHeight(chr, _deviceDPI);
                             chr.Palette = pal;
                         }
 
@@ -3025,7 +3059,7 @@ namespace TeletextSharedResources
                         //ColorPalette pal = GetColour(page, x, y, chr.Palette);
                         //chr.Palette = pal;
 
-                        chr = ConvertToDoubleHeight(chr);
+                        chr = ConvertToDoubleHeight(chr, _deviceDPI);
                         chr.Palette = pal;
                     }
 
@@ -3224,7 +3258,7 @@ namespace TeletextSharedResources
                             lineBinRev += bin.Reverse();
                             String binParity = Convert.ToString(Convert.ToString(workingLine.Bytes[n], 2).PadLeft(8, Convert.ToChar("0")));
                             lineBinWithParity += binParity;
-                            lineBinWithParity += binParity.Reverse();
+                            lineBinWithParityRev += binParity.Reverse();
 
                         }
 

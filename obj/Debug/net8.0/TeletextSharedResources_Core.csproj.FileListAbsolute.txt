@@ -26,3 +26,4 @@ D:\Documents\git\teletext-suite-core\teletext-shared-resources\obj\Debug\net8.0\
 D:\Documents\git\teletext-suite-core\teletext-shared-resources\obj\Debug\net8.0\refint\TeletextSharedResources_Core.dll
 D:\Documents\git\teletext-suite-core\teletext-shared-resources\obj\Debug\net8.0\TeletextSharedResources_Core.pdb
 D:\Documents\git\teletext-suite-core\teletext-shared-resources\obj\Debug\net8.0\ref\TeletextSharedResources_Core.dll
+D:\Documents\git\teletext-suite-core\teletext-shared-resources\obj\Debug\net8.0\TeletextSharedResources_Core.sourcelink.json
