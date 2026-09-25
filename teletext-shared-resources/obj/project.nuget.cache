@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "MXv4wAH0dHvhQyrTQ+pV92jpiLTSef6vU5u+fbtVAJPalO17vtjP6S/tDotmP9KQN61zCW4gOue1LJL7pGX2Rw==",
+  "success": true,
+  "projectFilePath": "/Users/joshuanickels01/Desktop/NTSC-WST-Teletext-Resources/teletext-shared-resources/TeletextSharedResources_Core.csproj",
+  "expectedPackageFiles": [
+    "/Users/joshuanickels01/.nuget/packages/microsoft.win32.systemevents/9.0.2/microsoft.win32.systemevents.9.0.2.nupkg.sha512",
+    "/Users/joshuanickels01/.nuget/packages/system.drawing.common/9.0.2/system.drawing.common.9.0.2.nupkg.sha512"
+  ],
+  "logs": []
+}
