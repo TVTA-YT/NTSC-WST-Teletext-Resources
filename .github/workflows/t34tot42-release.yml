@@ -1,18 +1,19 @@
 # Builds ready-to-run t34tot42 programs for every platform and attaches them
-# to a GitHub Release. Runs when you push a version tag, e.g.:
+# to a GitHub Release. Runs when you push a tag starting with "t34tot42-v":
 #
-#   git tag v1.0.0
-#   git push origin v1.0.0
+#   git tag t34tot42-v1.0.0
+#   git push origin t34tot42-v1.0.0
 #
-# It can also be started by hand from the repository's Actions tab
-# ("Run workflow"); a manual run uploads the builds as workflow artifacts
-# instead of making a release.
+# (The prefix keeps these tags separate from anything else you release from
+# this repository.) It can also be started by hand from the Actions tab
+# ("Run workflow"); a manual run only uploads the builds as workflow
+# artifacts, without making a release.
 
-name: Build and release
+name: t34tot42 release
 
 on:
   push:
-    tags: ["v*"]
+    tags: ["t34tot42-v*"]
   workflow_dispatch:
 
 permissions:
@@ -33,12 +34,12 @@ jobs:
           dotnet-version: "8.0.x"
 
       - name: Publish ${{ matrix.rid }}
-        run: dotnet publish src/t34tot42.csproj -c Release -r ${{ matrix.rid }} -o publish/${{ matrix.rid }}
+        run: dotnet publish t34tot42/t34tot42.csproj -c Release -r ${{ matrix.rid }} -o publish/${{ matrix.rid }}
 
       - name: Package
         run: |
           mkdir -p dist
-          cp README.md publish/${{ matrix.rid }}/
+          cp t34tot42/README.md publish/${{ matrix.rid }}/
           [ -f LICENSE ] && cp LICENSE publish/${{ matrix.rid }}/ || true
           cd publish/${{ matrix.rid }}
           zip -9 -r ../../dist/t34tot42-${{ matrix.rid }}.zip .
@@ -50,7 +51,7 @@ jobs:
 
   release:
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/t34tot42-v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -64,5 +65,5 @@ jobs:
         run: |
           gh release create "${{ github.ref_name }}" dist/*.zip \
             --repo "${{ github.repository }}" \
-            --title "t34tot42 ${{ github.ref_name }}" \
+            --title "t34tot42 ${GITHUB_REF_NAME#t34tot42-}" \
             --notes "Download the zip for your computer, unzip it, and see README.md for how to run it."
