@@ -1,0 +1,68 @@
+# Builds ready-to-run t34tot42 programs for every platform and attaches them
+# to a GitHub Release. Runs when you push a version tag, e.g.:
+#
+#   git tag v1.0.0
+#   git push origin v1.0.0
+#
+# It can also be started by hand from the repository's Actions tab
+# ("Run workflow"); a manual run uploads the builds as workflow artifacts
+# instead of making a release.
+
+name: Build and release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to create the release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rid: [win-x64, win-arm64, osx-arm64, osx-x64, linux-x64, linux-arm64]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Publish ${{ matrix.rid }}
+        run: dotnet publish src/t34tot42.csproj -c Release -r ${{ matrix.rid }} -o publish/${{ matrix.rid }}
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          cp README.md publish/${{ matrix.rid }}/
+          [ -f LICENSE ] && cp LICENSE publish/${{ matrix.rid }}/ || true
+          cd publish/${{ matrix.rid }}
+          zip -9 -r ../../dist/t34tot42-${{ matrix.rid }}.zip .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: t34tot42-${{ matrix.rid }}
+          path: dist/t34tot42-${{ matrix.rid }}.zip
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" dist/*.zip \
+            --repo "${{ github.repository }}" \
+            --title "t34tot42 ${{ github.ref_name }}" \
+            --notes "Download the zip for your computer, unzip it, and see README.md for how to run it."

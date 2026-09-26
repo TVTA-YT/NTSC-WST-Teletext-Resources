@@ -4,27 +4,27 @@ using System.Collections.Generic;
 namespace TeletextSharedResources
 {
     /// <summary>
-    /// This script converts a 34-bit NTSC (525-line) T34 WST teletext file to a 42-bit PAL (625-line) T42 WST teletext
+    /// This script converts a 34-byte NTSC (525-line) T34 WST teletext file to a 42-byte PAL (625-line) T42 WST teletext
     /// file that can be used with existing WST editors, all based on processing T42 files.
     ///
     /// In a T34 packet, there are 2 address bytes plus 32 display bites, so 34 bytes total (columns 0-31).
     /// NTSC WST services sent the remaining columns, 32-39, as separate row-extension packets. To adapt T34 streams
     /// for use with T42 editors, this involves keeping the original 34-byte packet and adding 8 additional bytes to
-    /// the end, which produces columns 32-39. These columns are simply filled with spaces.
+    /// the end for columns 32-39. These columns are filled from the row-extension packets (or spaces if no packets arrived).
     /// </summary>
     ///
     public static class T34Converter
     {
         // Packet sizes for T34 and T42 (PAL) and address byte size
-        private const int T34PacketSize = 34;
-        private const int T42PacketSize = 42;
+        public const int T34PacketSize = 34;
+        public const int T42PacketSize = 42;
         private const int AddressBytes = 2;
 
         // 32 columns in 525 WST, 40 in 625 WST
         private const int ColumnsPerT34Packet = 32;
         private const int ExtraColumns = 8;
 
-        // Extra 4 rows per extension packet
+        // Each extension packet covers 4 rows
         private const int RowsPerExtensionPacket = 4;
 
         // 8 possible magazines
@@ -49,7 +49,7 @@ namespace TeletextSharedResources
         private static int DecodeHamming84(byte encodedByte, out int bitErrors)
         {
             int closestValue = -1;             // No value yet
-            int closestDistance = 9;           // 1 byte has 8 bytes, if 9, then that's bad
+            int closestDistance = 9;           // A byte has 8 bytes; 9 would be larger than any possible distance
             int otherValuesAtSameDistance = 0; // Tracks whether multiple values are equally close
 
             // 16 possible 4-bit values
@@ -81,7 +81,7 @@ namespace TeletextSharedResources
             return correctable ? closestValue : -1;
         }
 
-        // Count how many 1 bits are an integer
+        // Count how many bits are in an integer
         private static int CountSetBits(int value)
         {
             int count = 0;
@@ -119,7 +119,7 @@ namespace TeletextSharedResources
             // Calculate row number
             rowNumber = ((lowNibble >> 3) & 0x1) | (highNibble << 1);
 
-            // Determine if any errors
+            // This is true only if both bytes arrived with no errors
             addressArrivedIntact = lowErrors == 0 && highErrors == 0;
             return true;
         }
@@ -192,7 +192,7 @@ namespace TeletextSharedResources
 
             var carriesRowExtensions = new bool[MagazineCount];
 
-            // Check is magazine carries row extensions
+            // Check if magazine carries row extensions
             for (int magazine = ExtensionMagazineOffset; magazine < MagazineCount; magazine++)
             {
                 // No intact headers & at least 6 extension packets & very few other packets
@@ -224,10 +224,10 @@ namespace TeletextSharedResources
                 // Ignore rows beyond row 24
                 if (rowNumber > LastDisplayRow) continue;
 
-                // Ignore damaged normal rows
+                // Skip rows whose address needs correcting because it may point at the wrong row or page; the headers are kept
                 if (rowNumber != 0 && !intact) continue;
 
-                // Create 42-byte packet, then copy it
+                // Create 42-byte packet, then copy the 34 T34 bytes into it
                 var t42Packet = new byte[T42PacketSize];
                 Buffer.BlockCopy(t34Data, packetStart, t42Packet, 0, T34PacketSize);
 
@@ -244,7 +244,7 @@ namespace TeletextSharedResources
                     pagesInProgress[magazine] = new PageInProgress();
                 }
 
-                // If no current page, don't store the packet
+                // Skip rows that arrive before any header in their magazine
                 if (pagesInProgress[magazine] == null) continue;
 
                 // Save T42 packet
