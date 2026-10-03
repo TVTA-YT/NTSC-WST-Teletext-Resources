@@ -184,7 +184,7 @@ namespace TeletextSharedResources
                 }
 
                 // Count ordinary packets
-                else
+                else if (rowNumber <= LastDisplayRow)
                 {
                     otherPacketCount[magazine]++;
                 }
