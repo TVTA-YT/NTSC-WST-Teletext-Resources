@@ -38,6 +38,9 @@ namespace TeletextSharedResources
         // Space byte
         private const byte Space = 0x20;
 
+        // A carrier may show at most 1 seemingly intact header per this many extension packets
+        private const int MaxHeadersPerCarrierPackets = 100;
+
         // 16 possible 4-bit values
         private static readonly byte[] HammingCodeWords =
         {
@@ -195,8 +198,13 @@ namespace TeletextSharedResources
             // Check if magazine carries row extensions
             for (int magazine = ExtensionMagazineOffset; magazine < MagazineCount; magazine++)
             {
-                // No intact headers & at least 6 extension packets & very few other packets
-                carriesRowExtensions[magazine] = intactHeaderCount[magazine] == 0 && extensionNumberedCount[magazine] >= 6 && otherPacketCount[magazine] <= extensionNumberedCount[magazine] / 20;
+                // At least 6 extension packets & very few other packets & hardly any headers
+                // * A magazine with real pages sends a header with every page (about 1 in 20 of its packets). A carrier sends none,
+                // * so the few it seems to have are damaged extension packets (e.g. 6 among 22,000 on TBS SSS Teletext, 1994)
+                carriesRowExtensions[magazine] =
+                    extensionNumberedCount[magazine] >= 6 &&
+                    intactHeaderCount[magazine] <= extensionNumberedCount[magazine] / MaxHeadersPerCarrierPackets &&
+                    otherPacketCount[magazine] <= extensionNumberedCount[magazine] / 20;
             }
 
             // Store T42 packets
